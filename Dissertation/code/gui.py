@@ -7,11 +7,13 @@ Created on Sun Jul  3 09:59:17 2022
 
 from tkinter import *
 import numpy as np
+import os
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import date
+from datetime import date, timedelta, datetime
 from matplotlib import dates
+from matplotlib.dates import DayLocator, DateFormatter
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg,
@@ -141,7 +143,7 @@ class SVM2018:
 		#try and load the data
 		data = 0
 		try:
-			pd.read_csv("./data/"+ coin + '2018.csv',sep=';')
+			pd.read_csv("./data/training"+ coin + '2018.csv',sep=';')
 			print("file found")
 		except:
 			print("no file") #if there's no data then call the api request
@@ -152,7 +154,7 @@ class SVM2018:
 			data = r.json()
 			#print(data)
 
-			file = open("./data/"+ coin + '2018.csv', 'w') #create the new file
+			file = open("./data/training"+ coin + '2018.csv', 'w') #create the new file
 			file.write("time_period_start;time_period_end;time_open;time_close;price_open;price_high;price_low;price_close;volume_traded;trades_count;")
 			file.write('\n')
 			count = 0 
@@ -172,13 +174,14 @@ class SVM2018:
 				file.write('\n')
 			file.close()
 		finally:
-			data = pd.read_csv("./data/"+ coin + '2018.csv',sep=';', usecols=[0,1,4,5,6,7,8,9]) #strip the important data
+			data = pd.read_csv("./data/training"+ coin + '2018.csv',sep=';', usecols=[0,1,4,5,6,7,8,9]) #strip the important data
 			df = pd.DataFrame(data)
 			print(data)
 			plot = {'Date' : [row[0] for index , row in df.iterrows()],
 					 'Price': [row[4] for index , row in df.iterrows() ] 
 					 } #create a dictionary with dates and open values
 			dfPlot = pd.DataFrame(plot, columns = ['Date', 'Price'])
+			dfPlot.set_index("Date", inplace=True)
 			figure = plt.Figure(figsize=(6, 6), dpi=105)
 			figure_canvas = FigureCanvasTkAgg(figure, self.page)
 			NavigationToolbar2Tk(figure_canvas, self.page)
@@ -186,17 +189,14 @@ class SVM2018:
 			axes.set_title('Price data from 2018-2021 for: ' + coin)
 			axes.set_xlabel('Date')
 			axes.set_ylabel('Price in USD')
-			#dfPlot = dfPlot[['Date','Price']].groupby('Date').sum() #group the axis together
-			axes.set_xticks(dfPlot.index)
 			axes.set_xticklabels(plot['Date'], fontsize=7)
 
 			dates_ = pd.date_range('2018-01-01', '2020-12-31').to_pydatetime()
-			axes.xaxis.set_major_locator(dates.DayLocator(bymonthday=range(1,32),interval=45))  #Code from https://stackoverflow.com/questions/48932345/pandas-plot-hide-some-x-axis-labels
-			axes.xaxis.set_major_formatter(dates.DateFormatter('%b\n\n%d \n '))
-			axes.xaxis.set_minor_locator(dates.DayLocator(bymonthday=range(1,32),  interval=32))
+			axes.xaxis.set_major_locator(dates.DayLocator(interval=25))
+			axes.xaxis.set_major_formatter(dates.DateFormatter('%b - %d - %y'))
 
 
-			dfPlot.plot(kind='line', legend='true', ax=axes) #plot the graph
+			dfPlot.plot(kind='line', legend='true', ax=axes, rot=90) #plot the graph
 			figure_canvas.get_tk_widget().place(relx= 0.025, rely= 0.1)
 	
 
@@ -251,7 +251,7 @@ class SVM2022:
 		#try and load the data
 		data = 0
 		try:
-			pd.read_csv("./data/"+ coin + '2022.csv',sep=';')
+			pd.read_csv("./data/training"+ coin + '2022.csv',sep=';')
 			print("file found")
 		except:
 			print("no file") #if there's no data then call the api request
@@ -261,7 +261,7 @@ class SVM2022:
 			r = requests.get(url, headers=headers)
 			data = r.json()
 			print(data)
-			file = open("./data/"+ coin + '2022.csv', 'w') #create the new file
+			file = open("./data/training"+ coin + '2022.csv', 'w') #create the new file
 			file.write("time_period_start;time_period_end;time_open;time_close;price_open;price_high;price_low;price_close;volume_traded;trades_count;")
 			file.write('\n')
 			count = 0 
@@ -276,7 +276,7 @@ class SVM2022:
 						new = entry.split("T")
 						append=""
 						for i in range(0,5):
-							append = append + new[1][i]
+							append = append + new[1][i] #split the long time from the date and append the shorter time
 
 						file.write(str(new[0]) + '-' + str(append) + ';')
 					else:
@@ -284,28 +284,26 @@ class SVM2022:
 				file.write('\n')
 			file.close()
 		finally:
-			data = pd.read_csv("./data/"+ coin + '2022.csv',sep=';', usecols=[0,1,4,5,6,7,8,9]) #strip the important data
+			data = pd.read_csv("./data/training"+ coin + '2022.csv',sep=';', usecols=[0,1,4,5,6,7,8,9]) #strip the important data
 			df = pd.DataFrame(data)
 			plot = {'Date' : [row[0] for index , row in df.iterrows()],
 					 'Price': [row[4] for index , row in df.iterrows() ] 
 					 } #create a dictionary with dates and open values
+
 			dfPlot = pd.DataFrame(plot, columns = ['Date', 'Price'])
-			figure = plt.Figure(figsize=(6, 6.5), dpi=110)
+			dfPlot.set_index("Date", inplace=True)
+			figure = plt.Figure(figsize=(6, 6.5), dpi=110) #create the plot
 			figure_canvas = FigureCanvasTkAgg(figure, self.page)
 			NavigationToolbar2Tk(figure_canvas, self.page)
 			axes = figure.add_subplot()
 			axes.set_title('Price data from 2021-2022 for: ' + coin)
 			axes.set_xlabel('Date')
 			axes.set_ylabel('Price in USD')
-			axes.set_xticks(dfPlot.index)
 			axes.set_xticklabels(plot['Date'], fontsize=7)
-
 			dates_ = pd.date_range('2021-01-01', date.today()).to_pydatetime()
-			axes.xaxis.set_major_locator(dates.DayLocator(bymonthday=range(1,32),interval=45))  #Code from https://stackoverflow.com/questions/48932345/pandas-plot-hide-some-x-axis-labels
-			axes.xaxis.set_major_formatter(dates.DateFormatter('%b\n\n%d'))
-			axes.xaxis.set_minor_locator(dates.DayLocator(bymonthday=range(1,32),  interval=32))
-
-			dfPlot.plot(kind='line', legend='true', ax=axes) #plot the graph
+			axes.xaxis.set_major_locator(dates.DayLocator(interval=26))
+			axes.xaxis.set_major_formatter(dates.DateFormatter('%b - %d : %y'))
+			dfPlot.plot(kind='line', legend='true', ax=axes, rot=90) #plot the graph
 			figure_canvas.get_tk_widget().place(relx= 0.025, rely= 0.1)
 
 class SVMLive:
@@ -346,6 +344,86 @@ class SVMLive:
 
 	def trade(self, coin):
 		print(coin)
+		if(coin == "Bitcoin"):
+			apiRequest = "BTC"
+		elif(coin == "Ethereum"):
+			apiRequest = "ETH"
+		elif(coin == "Litecoin"):
+			apiRequest = "LTC"
+		elif(coin == "LoopRing"):
+			apiRequest = "LRC"
+
+		#try and load the data
+		data = 0
+		try:
+			pd.read_csv("./data/training"+ coin + 'Live.csv',sep=';')
+			print("file found")
+		except:
+			print("no file") #if there's no data then call the api request
+			TodayMinusOneDay = datetime.today() - timedelta(days=1)
+			current = str(TodayMinusOneDay)
+			current = current.split(" ")
+			hour_int = current[1][0] + current[1][1] #calculate todays time to the nearest 4 hours
+			hour = 4 * round(int(hour_int)/4)
+			if(hour < 10):
+				hour = '0' + str(hour) 
+			apiDateTime = current[0] + 'T' + str(hour) + ":00:00" #use the datetime as an api request
+
+			url = 'https://rest.coinapi.io/v1/ohlcv/COINBASE_SPOT_' + apiRequest +'_USD/history?period_id=4HRS&time_start=2022-01-01T00:00:00&time_end='+ apiDateTime + '&limit=2000'
+			#headers = {'X-CoinAPI-Key' : 'F7F21667-42EE-466D-B32D-DB4E2D15E9EE'}
+			headers = {'X-CoinAPI-Key' : '8C728603-6D0B-45CF-87CE-5D56F7D95BC8'}
+			r = requests.get(url, headers=headers)
+			data = r.json()
+			print(data)
+			file = open("./data/training"+ coin + 'Live.csv', 'w') #create the new file
+			file.write("time_period_start;time_period_end;time_open;time_close;price_open;price_high;price_low;price_close;volume_traded;trades_count;")
+			file.write('\n')
+			count = 0 
+			for dictionary in data:
+				count = 0
+				for datapoint in dictionary: #loop through the file and add the data points
+					count = count + 1
+					#print(dictionary.get(datapoint))
+					entry = dictionary.get(datapoint)
+
+					if(count == 1 or count == 2): #remove useless timestamps
+						new = entry.split("T")
+						append=""
+						for i in range(0,5):
+							append = append + new[1][i] #split the long time from the date and append the shorter time
+
+						file.write(str(new[0]) + '-' + str(append) + ';')
+					else:
+						file.write(str(entry)+ ";")
+				file.write('\n')
+			file.close()
+		finally:
+			data = pd.read_csv("./data/training"+ coin + 'Live.csv',sep=';', usecols=[0,1,4,5,6,7,8,9]) #strip the important data
+			df = pd.DataFrame(data)
+			plot = {'Date' : [row[0] for index , row in df.iterrows()],
+					 'Price': [row[4] for index , row in df.iterrows() ] 
+					 } #create a dictionary with dates and open values
+			dfPlot = pd.DataFrame(plot, columns = ['Date', 'Price'])
+			dfPlot.set_index("Date", inplace=True)
+			figure = plt.Figure(figsize=(6, 6.5), dpi=110)
+			figure_canvas = FigureCanvasTkAgg(figure, self.page)
+			NavigationToolbar2Tk(figure_canvas, self.page)
+			axes = figure.add_subplot()
+			axes.set_title('Price data from 2022-01-01 - ' + str(date.today()) +   ' for: ' + coin)
+			axes.set_xlabel('Date')
+			axes.set_ylabel('Price in USD')
+			axes.set_xticklabels(plot['Date'], fontsize=5)
+			axes.xaxis.set_major_locator(DayLocator(interval=32))
+			axes.xaxis.set_major_formatter(DateFormatter("%d-%b-%y"))
+
+			dfPlot.plot(kind='line', legend='true', ax=axes, rot=90) #plot the graph
+			figure_canvas.get_tk_widget().place(relx= 0.025, rely= 0.1)
+
+
+			#For Live delete the files afterwards because when run again you will want new data.
+			# if(os.path.exists("./data/training"+ coin + 'Live.csv')):
+			# 	os.remove("./data/training"+ coin + 'Live.csv')
+
 
 class ANN2018:
 	def __init__(self, page):
@@ -385,6 +463,7 @@ class ANN2018:
 
 	def trade(self, coin):
 		print(coin)
+
 
 class ANN2022:
 	def __init__(self, page):
